@@ -9,5 +9,5 @@ Electronic parts :
 Yaml  : [exemple](https://github.com/NicoDupont/Esphome-Easton-SDM120CT-RS485/blob/main/test-sdm120ct.yaml)
 
 ![img3.png](https://github.com/NicoDupont/Esphome-Easton-SDM120CT-RS485/blob/main/img3.jpg)
-![img1.png](https://github.com/NicoDupont/Esphome-Easton-SDM120CT-RS485/blob/main/img2.png)
+![img1.png](https://github.com/NicoDupont/Esphome-Easton-SDM120CT-RS485/blob/main/img2.jpg)
 
