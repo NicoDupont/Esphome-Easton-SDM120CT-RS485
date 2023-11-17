@@ -1,0 +1,320 @@
+substitutions:
+  friendly_name: "test-cpt-energy"
+  friendly_name_wifiap: "test-cpt-energy-Hotspot"
+  interval_update_court: "10s"
+  interval_update_normal: "120s"
+  interval_update_long: "300s"
+  reboot_time: "300min"
+
+esphome:
+  name: "test-cpt-energy"
+  friendly_name: "test-cpt-energy"
+
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: "WF0x+wj3AFxqMx4kgWOTJP6uA6+IYmJSkO21Lq7TgVI="
+
+ota:
+  password: "7aefbfe33d091034c2f807f6f6caac5a"
+
+wifi:
+  networks:
+  - ssid: !secret wifi_maison_ssid
+    password: !secret wifi_maison_password
+  - ssid: !secret wifi_maison_2_ssid
+    password: !secret wifi_maison_2_password
+  reboot_timeout : ${reboot_time} #reboot si pas de wifi actif
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "${friendly_name_wifiap}"
+    password: !secret wifi_esp_ap_password
+
+
+captive_portal:
+
+#--------------------------------------
+#--------------------------------------
+web_server:
+  port: 80
+  version: 2
+
+#VOLTAGE                    0x0000                              //V
+#CURRENT                    0x0006                              //A
+#POWER                      0x000C                              //W
+#APPARENT_POWER             0x0012                              //VA
+#REACTIVE_POWER             0x0018                              //VAr
+#POWER_FACTOR               0x001E                              //None
+#PHASE_ANGLE                0x0024                              //Degrees
+#FREQUENCY                  0x0046                              //Hz
+#IMPORT_ACTIVE_ENERGY       0x0048                              //kWh
+#EXPORT_ACTIVE_ENERGY       0x004A                              //kWh
+#IMPORT_REACTIVE_ENERGY     0x004C                              //kVArh
+#EXPORT_REACTIVE_ENERGY     0x004E                              //kVARh
+#TOTAL_ACTIVE_ENERGY        0x0156                              //kWh
+#TOTAL_REACTIVE_ENERGY      0x0158                              //Kvarh
+
+# Example configuration entry
+uart:
+  rx_pin: 16
+  tx_pin: 17
+  baud_rate: 9600 
+  stop_bits: 1
+  id: uart_sdm120ct
+  parity: none
+
+modbus:
+  #send_wait_time: 500ms
+  #flow_control_pin: 5
+  id: modbus_sdm120ct
+  uart_id: uart_sdm120ct
+
+modbus_controller:
+  - id: sdm120ct_general
+    ## the Modbus device addr
+    address: 0x1
+    modbus_id: modbus_sdm120ct
+    setup_priority: -10
+    update_interval: 5s
+
+sensor:
+  - platform: modbus_controller
+    modbus_controller_id: sdm120ct_general
+    name: "Voltage"
+    id: Voltage
+    register_type: read
+    address: 0x0000
+    unit_of_measurement: "V"
+    value_type: FP32
+    accuracy_decimals: 1
+    filters:
+    - multiply: 1 #0.1 #1/10
+
+  - platform: modbus_controller
+    modbus_controller_id: sdm120ct_general
+    name: Current
+    id: Current
+    register_type: read
+    address: 0x0006
+    unit_of_measurement: "A"
+    value_type: FP32
+    accuracy_decimals: 2
+    filters:
+      - multiply: 1
+
+  - platform: modbus_controller
+    modbus_controller_id: sdm120ct_general
+    name: POWER
+    id: POWER
+    register_type: read
+    address: 0x000C
+    unit_of_measurement: "W"
+    value_type: FP32
+    accuracy_decimals: 2
+    filters:
+      - multiply: 1
+
+  - platform: modbus_controller
+    modbus_controller_id: sdm120ct_general
+    name: APPARENT_POWER
+    id: APPARENT_POWER
+    register_type: read
+    address: 0x0012
+    unit_of_measurement: "VA"
+    value_type: FP32
+    accuracy_decimals: 1
+    filters:
+      - multiply: 1
+
+  - platform: modbus_controller
+    modbus_controller_id: sdm120ct_general
+    name: REACTIVE_POWER
+    id: REACTIVE_POWER
+    register_type: read
+    address: 0x0018
+    unit_of_measurement: "VAr"
+    value_type: FP32
+    accuracy_decimals: 1
+    filters:
+      - multiply: 1
+
+  - platform: modbus_controller
+    modbus_controller_id: sdm120ct_general
+    name: POWER_FACTOR               
+    id: POWER_FACTOR
+    register_type: read
+    address: 0x001E
+    value_type: FP32
+    accuracy_decimals: 1
+    filters:
+      - multiply: 1
+
+  - platform: modbus_controller
+    modbus_controller_id: sdm120ct_general
+    name: PHASE_ANGLE               
+    id: PHASE_ANGLE
+    register_type: read
+    address: 0x0024
+    unit_of_measurement: "Degrees"
+    value_type: FP32
+    accuracy_decimals: 2
+    filters:
+      - multiply: 1
+
+  - platform: modbus_controller
+    modbus_controller_id: sdm120ct_general
+    name: FREQUENCY               
+    id: FREQUENCY
+    register_type: read
+    address: 0x0046
+    unit_of_measurement: "Hz"
+    value_type: FP32
+    accuracy_decimals: 2
+    filters:
+      - multiply: 1
+
+  - platform: modbus_controller
+    modbus_controller_id: sdm120ct_general
+    name: "IMPORT_ACTIVE_ENERGY"
+    id: IMPORT_ACTIVE_ENERGY
+    register_type: read
+    address: 0x0048
+    state_class: "total_increasing"
+    device_class: "energy"
+    unit_of_measurement: "kWh"
+    value_type: FP32
+    accuracy_decimals: 1
+    filters:
+    - multiply: 1 #0.1 #1/10
+
+  - platform: modbus_controller
+    modbus_controller_id: sdm120ct_general
+    name: "EXPORT_ACTIVE_ENERGY"
+    id: EXPORT_ACTIVE_ENERGY
+    register_type: read
+    address: 0x004A
+    state_class: "total_increasing"
+    device_class: "energy"
+    unit_of_measurement: "kWh"
+    value_type: FP32
+    accuracy_decimals: 1
+    filters:
+    - multiply: 1 #0.1 #1/10
+
+  - platform: modbus_controller
+    modbus_controller_id: sdm120ct_general
+    name: "IMPORT_REACTIVE_ENERGY"
+    id: IMPORT_REACTIVE_ENERGY
+    register_type: read
+    address: 0x004C
+    unit_of_measurement: "kVArh"
+    value_type: FP32
+    accuracy_decimals: 1
+    filters:
+    - multiply: 1 #0.1 #1/10
+
+  - platform: modbus_controller
+    modbus_controller_id: sdm120ct_general
+    name: "EXPORT_REACTIVE_ENERGY"
+    id: EXPORT_REACTIVE_ENERGY
+    register_type: read
+    address: 0x004E
+    unit_of_measurement: "kVArh"
+    value_type: FP32
+    accuracy_decimals: 1
+    filters:
+    - multiply: 1 #0.1 #1/10
+
+  - platform: modbus_controller
+    modbus_controller_id: sdm120ct_general
+    name: "TOTAL_ACTIVE_ENERGY"
+    id: TOTAL_ACTIVE_ENERGY
+    register_type: read
+    address: 0x0156
+    state_class: "total_increasing"
+    device_class: "energy"
+    unit_of_measurement: "kWh"
+    value_type: FP32
+    accuracy_decimals: 1
+    filters:
+    - multiply: 1 #0.1 #1/10
+
+  - platform: modbus_controller
+    modbus_controller_id: sdm120ct_general
+    name: "TOTAL_REACTIVE_ENERGY"
+    id: TOTAL_REACTIVE_ENERGY
+    register_type: read
+    address: 0x0158
+    unit_of_measurement: "Kvarh"
+    value_type: FP32
+    accuracy_decimals: 1
+    filters:
+    - multiply: 1 #0.1 #1/10
+
+
+#sdm_meter integration :
+#sensor:
+#  - platform: sdm_meter
+#    phase_a:
+#      current:
+#        name: "${friendly_name}Current"
+#      voltage:
+#        name: "${friendly_name} Voltage"
+#      active_power:
+#        name: "${friendly_name} Power"
+#      power_factor:
+#        name: "${friendly_name} Power Factor"
+#      apparent_power:
+#        name: "${friendly_name} Apparent Power"
+#      reactive_power:
+#        name: "${friendly_name} Reactive Power"
+#      phase_angle:
+#        name: "${friendly_name} Phase Angle"
+#    frequency:
+#      name: "${friendly_name} Frequency"
+#    total_power:
+#      name: "${friendly_name} Total Power"
+#    import_active_energy:
+#      name: "${friendly_name} Import Active Energy"
+#      state_class: "total_increasing"
+#      device_class: "energy"
+#      unit_of_measurement: "kWh"
+#    export_active_energy:
+#      name: "${friendly_name} Export Active Energy"
+#      state_class: "total_increasing"
+#      device_class: "energy"
+#      unit_of_measurement: "kWh"
+#    import_reactive_energy:
+#      name: "${friendly_name} Import Reactive Energy"
+#    export_reactive_energy:
+#      name: "${friendly_name} Export Reactive Energy"
+#    update_interval: 5s
+#    address: 1
+
+
+
+text_sensor:
+#--------------------------------------
+#wifi   
+  - platform: wifi_info
+    ip_address:
+      name: "${friendly_name} Local IP"
+    ssid:
+      name: "${friendly_name} SSID"
+
+#----------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------
+#bouton
+button:
+  - platform: restart
+    name: "${friendly_name} Restart"
+
+    
