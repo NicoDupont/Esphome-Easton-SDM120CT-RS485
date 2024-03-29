@@ -1,5 +1,7 @@
 # Esphome-Easton-SDM120CT-RS485
-yaml and electronic parts to use this RS485 energy meter in esphome with an esp32
+yaml and electronic parts to use this RS485 energy meter in esphome with an esp32.
+
+using the official integration is more faster.
 
 Electronic parts :
 - esp32
